@@ -52,14 +52,16 @@ impl<'a> PartialEq for Match<'a> {
 
 pub struct State<'a> {
   pub lines: &'a Vec<&'a str>,
+  pub unescaped: &'a Vec<String>,
   alphabet: &'a str,
   regexp: &'a Vec<&'a str>,
 }
 
 impl<'a> State<'a> {
-  pub fn new(lines: &'a Vec<&'a str>, alphabet: &'a str, regexp: &'a Vec<&'a str>) -> State<'a> {
+  pub fn new(lines: &'a Vec<&'a str>, unescaped: &'a Vec<String>, alphabet: &'a str, regexp: &'a Vec<&'a str>) -> State<'a> {
     State {
       lines,
+      unescaped,
       alphabet,
       regexp,
     }
@@ -86,8 +88,8 @@ impl<'a> State<'a> {
 
     let all_patterns = [exclude_patterns, custom_patterns, patterns].concat();
 
-    for (index, line) in self.lines.iter().enumerate() {
-      let mut chunk: &str = line;
+    for (index, line) in self.unescaped.iter().enumerate() {
+      let mut chunk: &str = &line;
       let mut offset: i32 = 0;
 
       loop {

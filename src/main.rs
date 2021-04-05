@@ -158,7 +158,14 @@ fn main() {
 
   let lines = output.split('\n').collect::<Vec<&str>>();
 
-  let mut state = state::State::new(&lines, alphabet, &regexp);
+  let unescaped = lines.iter().map(|line|
+    match strip_ansi_escapes::strip(line) {
+      Ok(bytes) => unsafe { String::from_utf8_unchecked(bytes) },
+      Err(_) => String::from("unparseable")
+    }
+  ).collect();
+
+  let mut state = state::State::new(&lines, &unescaped, alphabet, &regexp);
 
   let selected = {
     let mut viewbox = view::View::new(

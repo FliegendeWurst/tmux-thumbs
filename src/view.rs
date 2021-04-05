@@ -110,7 +110,7 @@ impl<'a> View<'a> {
       };
 
       // Find long utf sequences and extract it from mat.x
-      let line = &self.state.lines[mat.y as usize];
+      let line = &self.state.unescaped[mat.y as usize];
       let prefix = &line[0..mat.x as usize];
       let offset = prefix.width() as u16;
       let text = self.make_hint_text(mat.text);
