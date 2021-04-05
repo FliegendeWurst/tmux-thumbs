@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-const ALPHABETS: [(&'static str, &'static str); 22] = [
+const ALPHABETS: [(&'static str, &'static str); 26] = [
   ("numeric", "1234567890"),
   ("abcd", "abcd"),
   ("qwerty", "asdfqwerzxcvjklmiuopghtybn"),
@@ -23,6 +23,10 @@ const ALPHABETS: [(&'static str, &'static str); 22] = [
   ("colemak-homerow", "arstneiodh"),
   ("colemak-left-hand", "arstqwfpzxcv"),
   ("colemak-right-hand", "neioluymjhk"),
+  ("workman", "thsawrdqcmxzneoilfupgybvjk"),
+  ("workman-homerow", "thsaneo"),
+  ("workman-left-hand", "thsawrdqcmxz"),
+  ("workman-right-hand", "neoifuplk"),
 ];
 
 pub struct Alphabet<'a> {
