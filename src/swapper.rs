@@ -209,12 +209,19 @@ impl<'a> Swapper<'a> {
       "".to_string()
     };
 
+    let cargo_home = option_env!("CARGO_HOME");
+    let binary = if let Some(home) = cargo_home {
+        format!("{}/bin/thumbs", home)
+    } else {
+        format!("{}/target/release/thumbs", self.dir)
+    };
+
     let pane_command = format!(
-        "tmux capture-pane -et {active_pane_id} -p{scroll_params} | tail -n {height} | {dir}/target/release/thumbs -f '%U:%H' -t {tmp} {args}; tmux swap-pane -t {active_pane_id}; {zoom_command} tmux wait-for -S {signal}",
+        "tmux capture-pane -et {active_pane_id} -p{scroll_params} | tail -n {height} | {binary} -f '%U:%H' -t {tmp} {args}; tmux swap-pane -t {active_pane_id}; {zoom_command} tmux wait-for -S {signal}",
         active_pane_id = active_pane_id,
         scroll_params = scroll_params,
         height = self.active_pane_height.unwrap_or(i32::MAX),
-        dir = self.dir,
+        binary = binary,
         tmp = TMP_FILE,
         args = args.join(" "),
         zoom_command = zoom_command,
