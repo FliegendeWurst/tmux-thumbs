@@ -186,6 +186,10 @@ impl<'a> Swapper<'a> {
             return vec!["--regexp".to_string(), format!("'{}'", value.replace("\\\\", "\\"))];
           }
 
+          if name.starts_with("disable") {
+            return vec!["--disable".to_owned(), value.to_owned()];
+          }
+
           vec![]
         } else {
           vec![]

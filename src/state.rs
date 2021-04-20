@@ -55,6 +55,7 @@ pub struct State<'a> {
   pub unescaped: &'a Vec<String>,
   alphabet: &'a str,
   regexp: &'a Vec<&'a str>,
+  exclude_default: &'a [&'a str]
 }
 
 impl<'a> State<'a> {
@@ -64,6 +65,17 @@ impl<'a> State<'a> {
       unescaped,
       alphabet,
       regexp,
+      exclude_default: &[]
+    }
+  }
+
+  pub fn new_with_exclude(lines: &'a Vec<&'a str>, unescaped: &'a Vec<String>, alphabet: &'a str, regexp: &'a Vec<&'a str>, exclude_default: &'a [&'a str]) -> State<'a> {
+    State {
+      lines,
+      unescaped,
+      alphabet,
+      regexp,
+      exclude_default,
     }
   }
 
@@ -72,6 +84,7 @@ impl<'a> State<'a> {
 
     let exclude_patterns = EXCLUDE_PATTERNS
       .iter()
+      .filter(|(name, _)| !self.exclude_default.contains(name))
       .map(|tuple| (tuple.0, Regex::new(tuple.1).unwrap()))
       .collect::<Vec<_>>();
 
@@ -83,6 +96,7 @@ impl<'a> State<'a> {
 
     let patterns = PATTERNS
       .iter()
+      .filter(|(name, _)| !self.exclude_default.contains(name))
       .map(|tuple| (tuple.0, Regex::new(tuple.1).unwrap()))
       .collect::<Vec<_>>();
 

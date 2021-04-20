@@ -104,6 +104,13 @@ fn app_args<'a>() -> clap::ArgMatches<'a> {
         .short("p"),
     )
     .arg(
+      Arg::with_name("disable")
+        .help("Disable a default pattern")
+        .long("disable")
+        .takes_value(true)
+        .multiple(true)
+    )
+    .arg(
       Arg::with_name("regexp")
         .help("Use this regexp as extra pattern to match")
         .long("regexp")
@@ -142,6 +149,8 @@ fn main() {
   } else {
     [].to_vec()
   };
+  let disable = args.values_of("disable")
+    .map(|x| x.collect::<Vec<_>>()).unwrap_or_default();
 
   let foreground_color = colors::get_color(args.value_of("foreground_color").unwrap());
   let background_color = colors::get_color(args.value_of("background_color").unwrap());
@@ -165,7 +174,7 @@ fn main() {
     }
   ).collect();
 
-  let mut state = state::State::new(&lines, &unescaped, alphabet, &regexp);
+  let mut state = state::State::new_with_exclude(&lines, &unescaped, alphabet, &regexp, &disable);
 
   let selected = {
     let mut viewbox = view::View::new(
