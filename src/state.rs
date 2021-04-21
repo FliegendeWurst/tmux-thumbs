@@ -6,7 +6,7 @@ const EXCLUDE_PATTERNS: [(&'static str, &'static str); 1] = [("bash", r"[[:cntrl
 
 const PATTERNS: [(&'static str, &'static str); 14] = [
   ("markdown_url", r"\[[^]]*\]\(([^)]+)\)"),
-  ("url", r"((https?://|git@|git://|ssh://|ftp://|file:///)[^ ]+)"),
+  ("url", r"((https?://|git@|git://|ssh://|ftp://|file:///)[^ )]+)"),
   ("diff_a", r"--- a/([^ ]+)"),
   ("diff_b", r"\+\+\+ b/([^ ]+)"),
   ("docker", r"sha256:([0-9a-f]{64})"),
