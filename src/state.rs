@@ -6,7 +6,7 @@ const EXCLUDE_PATTERNS: [(&'static str, &'static str); 1] = [("bash", r"[[:cntrl
 
 const PATTERNS: [(&'static str, &'static str); 14] = [
   ("markdown_url", r"\[[^]]*\]\(([^)]+)\)"),
-  ("url", r#"((https?://|git@|git://|ssh://|ftp://|file:///)[^ }\])>"]+)"#),
+  ("url", r#"(?s)((https?://|git@|git://|ssh://|ftp://|file:///)[^ }\])>"─▾◦]+)"#),
   ("diff_a", r"--- a/([^ ]+)"),
   ("diff_b", r"\+\+\+ b/([^ ]+)"),
   ("docker", r"sha256:([0-9a-f]{64})"),
@@ -51,6 +51,7 @@ impl<'a> PartialEq for Match<'a> {
 }
 
 pub struct State<'a> {
+  full: &'a str,
   pub lines: &'a Vec<&'a str>,
   pub unescaped: &'a Vec<String>,
   alphabet: &'a str,
@@ -59,8 +60,10 @@ pub struct State<'a> {
 }
 
 impl<'a> State<'a> {
+  #[deprecated]
   pub fn new(lines: &'a Vec<&'a str>, unescaped: &'a Vec<String>, alphabet: &'a str, regexp: &'a Vec<&'a str>) -> State<'a> {
     State {
+      full: "",
       lines,
       unescaped,
       alphabet,
@@ -69,8 +72,9 @@ impl<'a> State<'a> {
     }
   }
 
-  pub fn new_with_exclude(lines: &'a Vec<&'a str>, unescaped: &'a Vec<String>, alphabet: &'a str, regexp: &'a Vec<&'a str>, exclude_default: &'a [&'a str]) -> State<'a> {
+  pub fn new_with_exclude(full: &'a str, lines: &'a Vec<&'a str>, unescaped: &'a Vec<String>, alphabet: &'a str, regexp: &'a Vec<&'a str>, exclude_default: &'a [&'a str]) -> State<'a> {
     State {
+      full,
       lines,
       unescaped,
       alphabet,
@@ -102,50 +106,57 @@ impl<'a> State<'a> {
 
     let all_patterns = [exclude_patterns, custom_patterns, patterns].concat();
 
-    for (index, line) in self.unescaped.iter().enumerate() {
-      let mut chunk: &str = &line;
-      let mut offset: i32 = 0;
+    let mut line_starts = Vec::new();
+    line_starts.push((0, 0));
+    for line in self.unescaped.iter() {
+      let last_line = *line_starts.last().unwrap();
+      line_starts.push((last_line.0 + 1, last_line.1 + line.len() + 1)); // count newline too
+    }
+    let mut chunk = self.full;
+    let mut offset = 0;
+    loop {
+      let submatches = all_patterns
+        .iter()
+        //.filter(|(_, x)| x.as_str().starts_with("(?s)"))
+        .filter_map(|tuple| match tuple.1.find_iter(chunk).nth(0) {
+          Some(m) => Some((tuple.0, tuple.1.clone(), m)),
+          None => None,
+        })
+        .collect::<Vec<_>>();
+      let first_match_option = submatches.iter().min_by(|x, y| x.2.start().cmp(&y.2.start()));
 
-      loop {
-        let submatches = all_patterns
-          .iter()
-          .filter_map(|tuple| match tuple.1.find_iter(chunk).nth(0) {
-            Some(m) => Some((tuple.0, tuple.1.clone(), m)),
-            None => None,
-          })
-          .collect::<Vec<_>>();
-        let first_match_option = submatches.iter().min_by(|x, y| x.2.start().cmp(&y.2.start()));
+      if let Some(first_match) = first_match_option {
+        let (name, pattern, matching) = first_match;
+        let text = matching.as_str();
 
-        if let Some(first_match) = first_match_option {
-          let (name, pattern, matching) = first_match;
-          let text = matching.as_str();
-
-          if let Some(captures) = pattern.captures(text) {
-            let (subtext, substart) = if let Some(capture) = captures.get(1) {
-              (capture.as_str(), capture.start())
-            } else {
-              (matching.as_str(), 0)
-            };
-
-            // Never hint or broke bash color sequences
-            if *name != "bash" {
-              matches.push(Match {
-                x: offset + matching.start() as i32 + substart as i32,
-                y: index as i32,
-                pattern: name,
-                text: subtext,
-                hint: None,
-              });
-            }
-
-            chunk = chunk.get(matching.end()..).expect("Unknown chunk");
-            offset += matching.end() as i32;
+        if let Some(captures) = pattern.captures(text) {
+          let (subtext, substart) = if let Some(capture) = captures.get(1) {
+            (capture.as_str(), capture.start())
           } else {
-            panic!("No matching?");
+            (matching.as_str(), 0)
+          };
+
+          // Never hint or broke bash color sequences
+          if *name != "bash" {
+            let byte_idx = offset + matching.start() + substart;
+            let (y, line_start_idx) = *line_starts.iter().rev().filter(|(_, idx)| *idx <= byte_idx).next().unwrap();
+            let x = byte_idx - line_start_idx;
+            matches.push(Match {
+              x: x as i32,
+              y: y as i32,
+              pattern: name,
+              text: subtext,
+              hint: None,
+            });
           }
+
+          chunk = chunk.get(matching.end()..).expect("Unknown chunk");
+          offset += matching.end();
         } else {
-          break;
+          panic!("No matching?");
         }
+      } else {
+        break;
       }
     }
 

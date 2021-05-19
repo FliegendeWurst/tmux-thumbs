@@ -169,12 +169,13 @@ fn main() {
 
   let unescaped = lines.iter().map(|line|
     match strip_ansi_escapes::strip(line) {
-      Ok(bytes) => unsafe { String::from_utf8_unchecked(bytes) },
+      Ok(bytes) => String::from_utf8(bytes).unwrap(),
       Err(_) => String::from("unparseable")
     }
   ).collect();
+  let unescaped_full = String::from_utf8(strip_ansi_escapes::strip(&output).unwrap()).unwrap();
 
-  let mut state = state::State::new_with_exclude(&lines, &unescaped, alphabet, &regexp, &disable);
+  let mut state = state::State::new_with_exclude(&unescaped_full, &lines, &unescaped, alphabet, &regexp, &disable);
 
   let selected = {
     let mut viewbox = view::View::new(

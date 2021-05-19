@@ -122,7 +122,7 @@ impl<'a> View<'a> {
         background = color::Bg(&**selected_background_color),
         resetf = color::Fg(color::Reset),
         resetb = color::Bg(color::Reset),
-        text = &text
+        text = text.replace('\n', "")
       );
 
       if let Some(ref hint) = mat.hint {
@@ -143,7 +143,7 @@ impl<'a> View<'a> {
           background = color::Bg(&*self.hint_background_color),
           resetf = color::Fg(color::Reset),
           resetb = color::Bg(color::Reset),
-          text = &text
+          text = text.replace('\n', "")
         );
       }
     }
